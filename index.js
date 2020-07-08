@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const app = express()
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.json())
@@ -37,7 +38,10 @@ let persons = [
 ]
 
 app.get('/api/persons', (request, response) => {
-	response.json(persons)
+	Person.find({})
+		.then(result => {
+			response.json(result)
+		})
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -75,13 +79,15 @@ app.post('/api/persons', (request, response) => {
 		})
 	}
 
-	const newPerson = {
+	const newPerson = new Person({
 		name: body.name,
 		number: body.number,
-		id: Math.round(Math.random() * 1000)
-	}
-	persons = persons.concat(newPerson)
-	response.json(newPerson)
+	})
+	newPerson.save()
+		.then(result => {
+			console.log(`added ${result.name} number ${result.number} to phonebook`)
+			response.json(result)
+		})
 })
 
 app.get('/info', (request, response) => {

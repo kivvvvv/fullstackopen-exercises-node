@@ -12,7 +12,6 @@ mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
 const personSchema = new mongoose.Schema({
 	name: String,
 	number: String,
-	id: Number,
 })
 const Person = mongoose.model('Person', personSchema)
 
@@ -35,7 +34,6 @@ if (process.argv.length === 5) {
 	const person = new Person({
 		name,
 		number,
-		id: Math.round(Math.random() * 1000)
 	})
 
 	person.save().then(result => {
