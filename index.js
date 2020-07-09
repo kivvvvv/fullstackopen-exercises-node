@@ -44,25 +44,43 @@ app.get('/api/persons', (request, response) => {
 		})
 })
 
-app.get('/api/persons/:id', (request, response) => {
-	const selectedPerson = persons.find(person => person.id === Number(request.params.id))
-	if (!selectedPerson) {
-		response.status(404).end()
-		return
-	}
+app.get('/api/persons/:id', (request, response, next) => {
+	Person.findById(request.params.id)
+		.then(result => {
+			if (!result) {
+				response.status(404).end()
+				return
+			}
 
-	response.json(selectedPerson)
+			response.json(result)
+		})
+		.catch(next)
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-	const selectedPerson = persons.find(person => person.id === Number(request.params.id))
-	if (!selectedPerson) {
-		response.status(404).end()
-		return
-	}
+app.delete('/api/persons/:id', (request, response, next) => {
+	Person.findByIdAndRemove(request.params.id)
+		.then(() => {
+			response.status(204).end()
+		})
+		.catch(error => {
+			next(error)
+		})
+})
 
-	persons = persons.filter(person => person.id !== Number(request.params.id))
-	response.status(204).end()
+app.put('/api/persons/:id', (request, response, next) => {
+	Person.findByIdAndUpdate(
+		request.params.id,
+		{
+			number: request.body.number
+		},
+		{
+			new: true
+		}
+	)
+		.then(result => {
+			response.json(result)
+		})
+		.catch(next)
 })
 
 app.post('/api/persons', (request, response) => {
@@ -90,12 +108,27 @@ app.post('/api/persons', (request, response) => {
 		})
 })
 
-app.get('/info', (request, response) => {
+app.get('/info', (request, response, next) => {
 	const date = new Date()
-	response.send(`
-	Phonebook has info for ${persons.length} people
-	${date.toDateString()} ${date.toTimeString()}
-	`)
+	Person.find({})
+		.then(result => {
+			response.send(`
+				Phonebook has info for ${result.length} people
+				${date.toDateString()} ${date.toTimeString()}
+			`)
+		})
+		.catch(next)
+})
+
+app.use((error, request, response, next) => {
+	if (error.name === 'CastError') {
+		response.status(400).send({
+			error: 'malformatted id'
+		})
+		return
+	}
+
+	next(error)
 })
 
 const PORT = process.env.PORT || 3001
