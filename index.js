@@ -74,7 +74,9 @@ app.put('/api/persons/:id', (request, response, next) => {
 			number: request.body.number
 		},
 		{
-			new: true
+			new: true,
+			runValidators: true,
+			context: 'query'
 		}
 	)
 		.then(result => {
@@ -83,7 +85,7 @@ app.put('/api/persons/:id', (request, response, next) => {
 		.catch(next)
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
 	const body = request.body
 	if (!body || !body.name || !body.number) {
 		return response.status(404).json({
@@ -106,6 +108,7 @@ app.post('/api/persons', (request, response) => {
 			console.log(`added ${result.name} number ${result.number} to phonebook`)
 			response.json(result)
 		})
+		.catch(next)
 })
 
 app.get('/info', (request, response, next) => {
@@ -121,14 +124,22 @@ app.get('/info', (request, response, next) => {
 })
 
 app.use((error, request, response, next) => {
-	if (error.name === 'CastError') {
-		response.status(400).send({
-			error: 'malformatted id'
-		})
-		return
+	switch (error.name) {
+		case 'CastError': {
+			response.status(400).send({
+				error: 'malformatted id'
+			})
+			break
+		}
+		case 'ValidationError': {
+			response.status(400).send({
+				error: error.message
+			})
+			break
+		}
+		default:
+			next(error)
 	}
-
-	next(error)
 })
 
 const PORT = process.env.PORT || 3001
